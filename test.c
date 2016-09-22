@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "test.h"
 
 #define debug
   
@@ -99,16 +99,28 @@ unsigned int findbit(unsigned int x){
 	}
 }
 unsigned int blakley(unsigned int a, unsigned int b, unsigned int n){
+
 	unsigned r = 0;
 	unsigned int k = findbit(a);
+	unsigned int k2 = findbit(b);
+	if (k2>k){
+		unsigned int temp=a;
+		a=b;
+		b=temp;
+		k=k2;
+	}
 	for (unsigned int i = 0; i < k; i++){
-		r=myAdd(myMult(2,r), myMult(a, ((b >> k-1-i) & 1)));
-		if(r>=n){
-			r=myAdd(r,mytwo(n));
+		//r=myAdd(myMult(2,r), myMult(a, ((b >> k-1-i) & 1)));
+		r=2*r;
+		if((b >> k-1-i) & 1){
+			r=r+a;
 		}
 		if(r>=n){
-			r=myAdd(r,mytwo(n));
-
+			r=r-n;
+		}
+		if(r>=n){
+			//r=myAdd(r,mytwo(n));
+			r=r-n;
 		}
 	}
 	return r;
@@ -118,90 +130,66 @@ unsigned int blakley(unsigned int a, unsigned int b, unsigned int n){
 unsigned int binMethod(unsigned int m, unsigned int e, unsigned int n){
 	unsigned int c=1;
 	unsigned int k=findbit(e);
+
 	if ((e >> k-1) & 1){
 		c=m;
-		
 	}
+		
+
 	for (int i = k-2; i >=0; i--){
+		//printf("c1_%i= %i\n", i,c);
 		c=blakley(c,c,n);
+		//printf("c2_%i= %i\n", i,c);
 		if ((e >> i) & 1){
 			c=blakley(c,m,n);
+		//	printf("ei");
 		}
+		
+
 	}
 	return c;
 }
 
-
-
-unsigned int mont(unsigned int x, unsigned int y, unsigned int m){
-	unsigned int s=0;
-	unsigned int c=0;
-	unsigned int j=0;
-	unsigned int r = myAdd(y,m);
-	unsigned int k=findbit(x);
-	for (int i=0; i<k; i++) {
-
-		if (!(x >> i & 1)){
-			if(!((s ^ c) & 1)) {
-				
-				j=0;
-				printf("j=0 \n");
-			}
-			else{
-				j=m;
-				printf("j=m \n");
-
-			}
-			
-		}
-		else{
-			if(!((s ^ c ^ y) & 1)){
-				
-				j=y;
-				printf("j=y \n");
-			}
-			else{
-				j=r;
-				printf("j=r \n");
-			}
-		}
-
-		printf("j=%i \n", j);
-		s=myAdd(s,c);
-		s=myAdd(s,j);
-		c=myAdd(s,c);
-		c=myAdd(c,j);
-		s=s >> 1;
-		c=c >> 1;
-	}
-	unsigned p=myAdd(s,c);
-	if (p>=m){
-		p=myAdd(p,mytwo(m));
-	}
-
-	return p;
+unsigned int modinv(unsigned int u, unsigned int v)
+{
+    unsigned int inv, u1, u3, v1, v3, t1, t3, q;
+    int iter;
+    /* Step X1. Initialise */
+    u1 = 1;
+    u3 = u;
+    v1 = 0;
+    v3 = v;
+    /* Remember odd/even iterations */
+    iter = 1;
+    /* Step X2. Loop while v3 != 0 */
+    while (v3 != 0)
+    {
+        /* Step X3. Divide and "Subtract" */
+        q = u3 / v3;
+        t3 = u3 % v3;
+        t1 = u1 + q * v1;
+        /* Swap */
+        u1 = v1; v1 = t1; u3 = v3; v3 = t3;
+        iter = -iter;
+    }
+    /* Make sure u3 = gcd(u,v) == 1 */
+    if (u3 != 1)
+        return 0;   /* Error: No inverse exists */
+    /* Ensure a positive result */
+    if (iter < 0)
+        inv = v - u1;
+    else
+        inv = u1;
+    return inv;
 }
 
 
-unsigned int mont2(unsigned int x, unsigned int y, unsigned int m){
-	unsigned int n=findbit(x);
-	unsigned int xi=0;
-	unsigned int p0=0;
-	unsigned int p=0;
-	for (int i=0; i<n-1; i++){
-		if (x >> i & 1){
-			p=myAdd(p,y);
-		}
-		if (p & 1){
-			p=myAdd(p,m);
-		}		
-		p=p>>1;
-	}
-	if(p>=m){
-		p=p-m;
-	}
-	return p;
-}
+
+
+
+
+
+
 
 void printbitwise(unsigned int x){
 	for (int i=31; i>=0; i--){
@@ -214,33 +202,81 @@ void printbitwise(unsigned int x){
 	}
 }
 
+unsigned int monpro(unsigned int x,unsigned int y, unsigned int n, unsigned int n2,unsigned int  r){
+	unsigned int t = x*y;
+	unsigned int m = t*n2 % r;
+	unsigned int u = (t+m*n)/r;
+	if(u>=n){
+		return (u-n);
+	}
+	else{
+		return u;
+	}
+}
+
+unsigned int modexp(unsigned int m, unsigned int e, unsigned int n){
+	unsigned int r = 2 << (findbit(n)-1);
+	unsigned int r2 = modinv(r,n);
+	unsigned int n2=((r*r2)-1)/n;
+	//printf("r = %i, r^ = %i, n = %i, n^ = %i \n", r,r2,n,n2);
+	unsigned int m2=m*r % n;
+	unsigned int x = r%n;
+	unsigned int k = findbit(e);
+	for (int i = k-1; i>=0; i--){
+		x=monpro(x,x,n,n2,r);
+		if(e >> i & 1){
+			x=monpro(m2,x,n,n2,r);
+		}
+	}
+	x=monpro(x,1,n,n2,r);
+
+	return x;
+}
+
+unsigned int evenModExp(unsigned int a, unsigned int e, unsigned int n){
+	unsigned int q = n;
+	unsigned int j = 1;
+	while(1){
+		//printf("q = %i\n", q);
+		q = q >> 1;
+		if(q & 1){
+			break;
+		}
+		j++;
+	}
+	//printf("j = %i, q = %i \n", j,q);
+	unsigned int a1=a%q;
+	unsigned int x1=modexp(a1,e,q);
+	unsigned int a3=a % (2<<j-1);
+	unsigned int e2 = e % (2<<j-2);
+	unsigned int x2 = binMethod(a3,e2,(2<<j-1));
+	unsigned int q2 = modinv(q,(2<<j-1));
+	unsigned int y = (x2-x1)*q2 % (2<<j-1);
+	unsigned int x = x1+q*y;
+	//printf("x = %i\n", x);
+	return x;
+}
+
+unsigned int montgomery(unsigned int m, unsigned int e, unsigned int n){
+	unsigned int x;
+	if(n & 1){
+		x = modexp(m,e,n);
+	}
+	else{
+		x = evenModExp(m,e,n);
+	}
+	return x;
+}
+
 
 
 int main (int argc, char *argv[]){
 	
-
-
-	unsigned int m = atoi(argv[1]);
-	unsigned int e = atoi(argv[2]);
-	unsigned int d = atoi(argv[3]);
-	unsigned int n = atoi(argv[4]);
-
-
-	unsigned int c = binMethod(m,e,n);
-	
-	//printf("blakley = %i \n", blakley(50,50,143,findbit(50)));
-  
-  	printf("m= %i \n", binMethod(c,d,n));
-	printf("\n");
-  	printf("c= %i \n", c);
-  	//printf("#bit = %i \n", findbit(5));
-  
-  //printbitwise(argv[1]);
-  
 	
 
-  printf("\n");
-
+ //evenModExp(375,249,388);
+	unsigned int x = montgomery(66,77,119);
+	printf("C = %i \n", x);
   return 0;
 }
 
