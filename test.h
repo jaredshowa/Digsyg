@@ -22,3 +22,7 @@ unsigned int modexp(unsigned int m, unsigned int e, unsigned int n);
 void printbitwise(unsigned int x);
 
 unsigned int montgomery(unsigned int m, unsigned int e, unsigned int n);
+unsigned int csa(unsigned int a, unsigned int b);
+void adder(unsigned int a, unsigned int b, unsigned int *c, unsigned int *s);
+unsigned int monpro3(unsigned int x, unsigned int y, unsigned int m);
+unsigned int monpro3(unsigned int x, unsigned int y, unsigned int m);
