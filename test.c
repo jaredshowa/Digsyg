@@ -1,4 +1,3 @@
-     
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,12 +184,6 @@ unsigned int modinv(unsigned int u, unsigned int v)
 
 
 
-
-
-
-
-
-
 void printbitwise(unsigned int x){
 	for (int i=31; i>=0; i--){
 		if(x >> i & 1){
@@ -212,6 +205,50 @@ unsigned int monpro(unsigned int x,unsigned int y, unsigned int n, unsigned int 
 	else{
 		return u;
 	}
+}
+
+unsigned int monpro3(unsigned int x, unsigned int y, unsigned int m){
+	unsigned int r=y+m;
+	unsigned int s=0;
+	unsigned int c=0;
+	unsigned int i=0;
+	unsigned int k1=findbit(x);
+	unsigned int k2=findbit(y);
+	if(k2>k1){
+		unsigned int temp=x;
+		x=y;
+		y=temp;
+		k1=k2;
+	}
+
+	for (int j=0; j<k1; j++){
+		if(x>>j & 1){
+			if((s ^ c ^ y) & 1){
+				i=r;
+			}
+			else{
+				i=y;
+			}
+
+		}
+		else{
+			if((s & 1) == (c & 1)){
+				i=0;
+			}
+			else{
+				i=m;
+			}
+		}
+		s=(s ^ c ^ i);
+		c=((s & c) | (s & i) | (c & i));
+		s = s >> 1;
+		c = c >> 1;
+	}
+	unsigned int p=s+c;
+	if(p>=m){
+		p=p-m;
+	}
+	return p;
 }
 
 unsigned int modexp(unsigned int m, unsigned int e, unsigned int n){
@@ -268,17 +305,60 @@ unsigned int montgomery(unsigned int m, unsigned int e, unsigned int n){
 	return x;
 }
 
+unsigned int csa(unsigned int a, unsigned int b){
+	unsigned int t=0;
+	unsigned int c=0;
+	
+	unsigned int s=0;
+	
+	int i=0;
+	int j=0;
+	for (i=0; i<findbit(b);i++){
+		c=0;
+		for (j=0; j<findbit(a); j++){
+			s=((t>>(i+j))&1) ^ ((a>>j & 1)&(b>>i & 1)) ^ c;
+			c=((t>>(i+j) & 1)&((a>>j & 1)&(b>>i & 1))) | ((t>>(i+j) & 1)&c) | (c&((a>>j & 1)&(b>>i & 1)));
+			if(s==0){
+				t &= ~(1<<(i+j));
+			}
+			else{
+				t |= (1<<(i+j));
+			}
+		}
+		if(c==0){
+				t &= ~(1<<(i+j));
+			}
+			else{
+				t |= (1<<(i+j));
+			}
+	}
+	/*
+	unsigned int m = 0;
+	for (i=0; i<findbit(t); t++){
+		c=0;
+		m = ((t<<i & 1) & n0) % (1<<w);
+	}
+*/
+	return 0;
+}
+
+void adder(unsigned int a, unsigned int b, unsigned int *c, unsigned int *s){
+
+}
+
 
 
 int main (int argc, char *argv[]){
 	
 	
-
- //evenModExp(375,249,388);
+	/*
 	unsigned int x = montgomery(66,77,119);
 	printf("C = %i \n", x);
+	*/
+	unsigned int a = atoi(argv[2]);
+	unsigned int b = atoi(argv[3]);
+	unsigned int m = atoi(argv[1]);
+	printf("p = %i \n", montgomery(a,b,m));
+
   return 0;
 }
-
-
-
